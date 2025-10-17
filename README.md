@@ -122,7 +122,7 @@ lr = 0.1             # Learning rate
 momentum = 0.9       # SGD momentum
 weight_decay = 5e-4  # Weight decay
 
-# Training settings
+# Training setting
 [train]
 epochs = 100         # Number of epochs
 amp = true          # Mixed precision (requires CUDA)
@@ -143,3 +143,6 @@ log_freq = 100      # Log metrics every N batches
 2. **Data Augmentation**: RandomResizedCrop and RandomHorizontalFlip included
 3. **Monitoring**: Watch both training and validation metrics
 4. **Early Stopping**: Stop manually if validation accuracy plateaus
+
+### TO Do
+1. 
