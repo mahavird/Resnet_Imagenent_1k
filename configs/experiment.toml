@@ -1,0 +1,26 @@
+# Reproducibility
+seed = 42
+
+[data]
+train_dir = "/content/data/imagenet_subtrain"
+val_dir   = "/content/data/imagenet_validation"
+img_size  = 224
+batch_size = 64
+num_workers = 4
+
+[model]
+# Arguments passed to ResNet constructor (besides num_classes)
+# e.g., width_per_group = 64
+
+[optim]
+lr = 0.1
+momentum = 0.9
+weight_decay = 5e-4
+
+[train]
+epochs = 20
+amp = true
+
+[logging]
+save_freq = 5  # Save checkpoint every N epochs
+log_freq = 100  # Log metrics every N batches
