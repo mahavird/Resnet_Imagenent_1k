@@ -153,18 +153,6 @@ Then open http://localhost:6006
 
 ### Key Training Curves
 
-**📊 Instructions to add graphs:**
-1. Start TensorBoard: `tensorboard --logdir=runs/resnet_152_sgd1_local`
-2. Open http://localhost:6006 in your browser
-3. Take screenshots of the following graphs:
-   - Training Loss (over epochs)
-   - Test Accuracy (over epochs)
-   - Test Accuracy-5 (over epochs)
-   - Test Loss (over epochs)
-4. Save screenshots to `./docs/images/` folder
-5. Uncomment the markdown image links below
-
-<!--
 ### Training Loss
 ![Training Loss](docs/images/training_loss.png)
 *Training loss decreased from 2.4 to ~0.5 over 100 epochs*
@@ -180,7 +168,6 @@ Then open http://localhost:6006
 ### Validation Loss
 ![Test Loss](docs/images/test_loss.png)
 *Validation loss converged to 0.574*
--->
 
 ### Training Progress Visualization (Text-Based)
 
