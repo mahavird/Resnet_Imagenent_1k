@@ -280,16 +280,3 @@ _Last Updated: October 18, 2025 4:10 PM - **TRAINING COMPLETE** (100/100 epochs)
 
 ---
 
-## 📸 Adding TensorBoard Graphs
-
-**Directory created**: `docs/images/` ✅
-
-**Quick Steps**:
-1. Run: `tensorboard --logdir=runs/resnet_152_sgd1_local`
-2. Open: http://localhost:6006
-3. Screenshot the 4 main graphs (see `docs/images/README.md` for details)
-4. Save screenshots to `docs/images/`
-5. Uncomment image sections in this file (lines ~161-177)
-
-**Result**: Your logs will display beautiful training curves! 📊
-
