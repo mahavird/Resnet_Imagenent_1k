@@ -3,8 +3,8 @@
 [data]
 train_dir = "/mnt/imagenet/train"
 val_dir = "/mnt/imagenet/val"
-num_workers = 8
-batch_size = 1024
+num_workers = 4
+batch_size = 256
 image_size = 224
 
 [augment]

@@ -66,7 +66,13 @@ def main():
     callbacks = build_callbacks(trainer_cfg)
     logger = False
     if bool(wandb_cfg.get("enabled", False)):
-        run_name = str(wandb_cfg.get("run_name", f"{model_cfg.get('name','model')}-run"))
+        # Build a sensible default name and expand simple placeholders if present
+        default_run_name = f"{model_cfg.get('name','model')}-bs{data_cfg.get('batch_size')}-sz{data_cfg.get('image_size')}"
+        cfg_run_name = str(wandb_cfg.get("run_name", default_run_name))
+        if "${" in cfg_run_name:
+            run_name = default_run_name
+        else:
+            run_name = cfg_run_name
         logger = WandbLogger(
             project=str(wandb_cfg.get("project", "imagenet-training")),
             name=run_name,
