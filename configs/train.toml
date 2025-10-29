@@ -1,0 +1,38 @@
+# Training config
+
+[data]
+train_dir = "/mnt/imagenet/train"
+val_dir = "/mnt/imagenet/val"
+num_workers = 8
+batch_size = 128
+image_size = 224
+
+[augment]
+policy = "randaugment" # options: none, autoaugment, randaugment
+randaugment_num_ops = 2
+randaugment_magnitude = 9
+
+[model]
+name = "resnet50" # e.g., resnet50, vit_base_patch16_224, convnext_base
+pretrained = true
+num_classes = 1000
+
+[optim]
+name = "adamw"
+lr = 0.001
+weight_decay = 0.05
+
+[scheduler]
+name = "cosine" # options: none, cosine
+max_epochs = 90
+warmup_epochs = 5
+
+[trainer]
+max_epochs = 90
+precision = "bf16" # options: 32, 16, bf16
+devices = 1
+accumulate_grad_batches = 1
+seed = 0
+output_dir = "outputs/train"
+checkpoint_dir = "outputs/checkpoints"
+log_every_n_steps = 50

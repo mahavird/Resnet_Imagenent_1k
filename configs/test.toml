@@ -1,0 +1,14 @@
+# Test/eval config
+
+[data]
+val_dir = "/mnt/imagenet/val"
+num_workers = 8
+batch_size = 128
+image_size = 224
+
+[model]
+checkpoint_path = "outputs/checkpoints/last.ckpt"
+
+[trainer]
+precision = "bf16" # options: 32, 16, bf16
+devices = 1

@@ -1,0 +1,16 @@
+# EDA configuration for ImageFolder datasets
+# Update the paths below to your dataset locations
+
+train_dir = "/mnt/imagenet/train"
+val_dir = "/mnt/imagenet/val"
+
+# Output directory for figures and summary text
+output_dir = "EDA/reports"
+
+# Limits how many images per split are sampled for stats (sizes, mean/std)
+max_images_stats = 2000
+
+# Random seed for sampling
+seed = 0
+
+

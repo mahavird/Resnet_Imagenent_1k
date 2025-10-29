@@ -1,0 +1,14 @@
+# Inference config
+
+[model]
+checkpoint_path = "outputs/checkpoints/last.ckpt"
+
+[infer]
+# Either a single image file or a directory of images
+input_path = "samples/"
+output_csv = "outputs/infer/predictions.csv"
+
+[data]
+image_size = 224
+num_workers = 4
+batch_size = 64

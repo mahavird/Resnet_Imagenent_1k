@@ -6,10 +6,13 @@ A modular PyTorch training setup for ResNet-50 on ImageNet-1K dataset.
 ```
 Resnet_Imagenet_1k/
 ├── configs/
-│   └── experiment.toml
+│   ├── experiment.toml
+│   ├── train.toml
+│   ├── test.toml
+│   └── infer.toml
 ├── src/
 │   ├── data/
-│   │   └── datasets.py
+│   │   └── datamodule.py
 │   ├── engine/
 │   │   └── engine.py
 │   ├── models/
@@ -20,10 +23,12 @@ Resnet_Imagenet_1k/
 │   ├── legacy/
 │   │   └── original_script.py
 │   └── train.py
+├── scripts/
+│   ├── train.py
+│   ├── test.py
+│   └── infer.py
 ├── checkpoints/     # Model checkpoints
 ├── logs/           # Training logs
-├── scripts/
-│   └── train.sh
 ├── test_setup.py   # Setup verification script
 └── README.md
 ```
@@ -58,91 +63,23 @@ data/
         └── image1.jpg
 ```
 
-### 4. Configure Training
-Edit `configs/experiment.toml`:
-```toml
-[data]
-train_dir = "/content/data/imagenet_subtrain"
-val_dir   = "/content/data/imagenet_validation"
-batch_size = 32  # Adjust based on GPU memory
-num_workers = 4
+## Lightning Training (timm models)
 
-[train]
-epochs = 100
-amp = true  # Mixed precision training
-
-[optim]
-lr = 0.1  # Learning rate
-```
-
-### 5. Start Training
+- Edit `configs/train.toml` for paths, model, and hyperparameters, then run:
 ```bash
-python src/train.py
+python scripts/train.py
+# or override config path
+TRAIN_CONFIG=/path/to/train.toml python scripts/train.py
 ```
 
-### 6. Monitor Training
-- Checkpoints saved when validation accuracy improves
-- Use `Ctrl+C` to stop training gracefully
-
-## Model
-
-This project uses **ResNet-50** with 25.6M parameters for ImageNet-1K classification (1000 classes).
-
-Other ResNet variants are available but not configured by default:
-- `resnet101(num_classes=1000)` - ResNet-101 (44.5M parameters)  
-- `resnet152(num_classes=1000)` - ResNet-152 (60.2M parameters)
-
-To switch models, edit `src/train.py`:
-```python
-from src.models import resnet101  # or resnet152
-model = resnet101(num_classes=num_classes, **cfg.get("model", {})).to(device)
+- Validate/Test a checkpoint: set `checkpoint_path` in `configs/test.toml` and run:
+```bash
+python scripts/test.py
 ```
 
-## Training Options
-
-### Configuration Parameters
-Edit `configs/experiment.toml` to customize training:
-
-```toml
-# Data settings
-[data]
-train_dir = "/content/data/imagenet_subtrain"
-val_dir = "/content/data/imagenet_validation"
-img_size = 224        # Input image size
-batch_size = 64       # Batch size (adjust for GPU memory)
-num_workers = 4       # Data loading workers
-
-# Model settings  
-[model]
-width_per_group = 64  # ResNet width multiplier
-
-# Optimizer settings
-[optim]
-lr = 0.1             # Learning rate
-momentum = 0.9       # SGD momentum
-weight_decay = 5e-4  # Weight decay
-
-# Training setting
-[train]
-epochs = 100         # Number of epochs
-amp = true          # Mixed precision (requires CUDA)
-
-# Logging settings
-[logging]
-save_freq = 5       # Save checkpoint every N epochs
-log_freq = 100      # Log metrics every N batches
+- Inference on an image or directory: set `checkpoint_path`, `input_path`, and `output_csv` in `configs/infer.toml` and run:
+```bash
+python scripts/infer.py
 ```
 
-### Hardware Recommendations
-- **GPU Memory**: 8GB+ VRAM recommended for ResNet-50
-- **Batch Size**: Start with 32-64, reduce for OOM errors
-- **Mixed Precision**: 1.5-2x speedup on modern GPUs
-
-### Training Tips
-1. **Learning Rate**: Start with 0.1, reduce by 10x every 30 epochs
-2. **Data Augmentation**: RandomResizedCrop and RandomHorizontalFlip included
-3. **Monitoring**: Watch both training and validation metrics
-4. **Early Stopping**: Stop manually if validation accuracy plateaus
-
-### TO Do
-1. 
+The data module uses `torchvision.datasets.ImageFolder` and supports `none`, `autoaugment`, and `randaugment` policies.
