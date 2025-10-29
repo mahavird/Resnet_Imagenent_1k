@@ -12,7 +12,7 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore
 
-from src.models.lightning_module import ImageNetLightningModule
+from src.models.imageclassifier import ImageClassifier
 
 
 def load_config(path: str):
@@ -41,7 +41,7 @@ def main():
     ckpt_path = model_cfg.get("checkpoint_path")
     assert ckpt_path, "checkpoint_path must be set in [model]"
 
-    model = ImageNetLightningModule.load_from_checkpoint(ckpt_path)
+    model = ImageClassifier.load_from_checkpoint(ckpt_path)
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)

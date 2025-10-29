@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 import pytorch_lightning as pl
 
@@ -9,7 +8,7 @@ except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore
 
 from src.data.datamodule import ImageFolderDataModule
-from src.models.lightning_module import ImageNetLightningModule
+from src.models.imageclassifier import ImageClassifier
 
 
 def load_config(path: str):
@@ -41,7 +40,7 @@ def main():
     ckpt_path = model_cfg.get("checkpoint_path")
     assert ckpt_path, "checkpoint_path must be set in [model]"
 
-    model = ImageNetLightningModule.load_from_checkpoint(ckpt_path)
+    model = ImageClassifier.load_from_checkpoint(ckpt_path)
 
     trainer = pl.Trainer(
         devices=int(trainer_cfg.get("devices", 1)),

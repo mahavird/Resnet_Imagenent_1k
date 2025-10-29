@@ -1,62 +1,96 @@
 import os
-from datetime import datetime
+from pathlib import Path
+
+import pytorch_lightning as pl
 
 try:
-    import tomllib  # Python 3.11+
-except ImportError:
-    import tomli as tomllib  # Python < 3.11
+    import tomllib  # py3.11+
+except ModuleNotFoundError:
+    import tomli as tomllib  # type: ignore
 
-import torch
-from torch import optim
+from src.data.datamodule import ImageFolderDataModule
+from src.models.imageclassifier import ImageClassifier
+from src.callbacks.callbacks import build_callbacks
+from pytorch_lightning.loggers import WandbLogger
 
-from src.data.datasets import DataConfig, make_dataloaders
-from src.engine.engine import train_one_epoch, evaluate
-from src.utils.utils import set_seed, get_device, save_checkpoint
-from src.models import resnet50
 
-def main(cfg_path: str = "configs/experiment.toml"):
-    with open(cfg_path, "rb") as f:
-        cfg = tomllib.load(f)
+def load_config(path: str):
+    with open(path, "rb") as f:
+        return tomllib.load(f)
 
-    set_seed(cfg.get("seed", 42))
-    device = get_device()
 
-    # Data
-    data_cfg = DataConfig(**cfg["data"])
-    train_ld, val_ld, num_classes = make_dataloaders(data_cfg)
+def main():
+    cfg_path = os.environ.get("TRAIN_CONFIG", "configs/train.toml")
+    cfg = load_config(cfg_path)
 
-    # Model
-    model = resnet50(num_classes=num_classes, **cfg.get("model", {})).to(device)
+    data_cfg = cfg.get("data", {})
+    aug_cfg = cfg.get("augment", {})
+    model_cfg = cfg.get("model", {})
+    optim_cfg = cfg.get("optim", {})
+    sched_cfg = cfg.get("scheduler", {})
+    trainer_cfg = cfg.get("trainer", {})
+    wandb_cfg = cfg.get("wandb", {})
 
-    # Optimizer & Scheduler
-    opt_cfg = cfg["optim"]
-    optimizer = optim.SGD(model.parameters(), lr=opt_cfg.get("lr", 0.1), momentum=0.9, weight_decay=5e-4)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=cfg["train"]["epochs"])
+    seed = int(trainer_cfg.get("seed", 0))
+    pl.seed_everything(seed, workers=True)
 
-    scaler = torch.cuda.amp.GradScaler(enabled=cfg["train"].get("amp", True))
+    dm = ImageFolderDataModule(
+        train_dir=data_cfg["train_dir"],
+        val_dir=data_cfg["val_dir"],
+        batch_size=int(data_cfg.get("batch_size", 128)),
+        num_workers=int(data_cfg.get("num_workers", 8)),
+        image_size=int(data_cfg.get("image_size", 224)),
+        policy=str(aug_cfg.get("policy", "randaugment")),
+        rand_num_ops=int(aug_cfg.get("randaugment_num_ops", 2)),
+        rand_magnitude=int(aug_cfg.get("randaugment_magnitude", 9)),
+    )
 
-    best_acc = 0.0
-    for epoch in range(cfg["train"]["epochs"]):
-        train_metrics = train_one_epoch(model, train_ld, optimizer, device, scaler=scaler)
-        val_metrics = evaluate(model, val_ld, device)
+    model = ImageClassifier(
+        model_name=str(model_cfg.get("name", "resnet50")),
+        num_classes=int(model_cfg.get("num_classes", 1000)),
+        pretrained=bool(model_cfg.get("pretrained", True)),
+        optim_name=str(optim_cfg.get("name", "adamw")),
+        lr=float(optim_cfg.get("lr", 1e-3)),
+        weight_decay=float(optim_cfg.get("weight_decay", 0.05)),
+        scheduler_name=str(sched_cfg.get("name", "cosine")),
+        max_epochs=int(sched_cfg.get("max_epochs", trainer_cfg.get("max_epochs", 90))),
+    )
 
-        scheduler.step()
+    precision = trainer_cfg.get("precision", "bf16")
+    if isinstance(precision, int):
+        precision = str(precision)
 
-        print(f"Epoch {epoch+1}/{cfg['train']['epochs']}",
-              f"train_loss={train_metrics['loss']:.4f} train_acc={train_metrics['acc']:.4f}",
-              f"val_loss={val_metrics['loss']:.4f} val_acc={val_metrics['acc']:.4f}")
+    ckpt_dir = Path(trainer_cfg.get("checkpoint_dir", "outputs/checkpoints"))
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
 
-        # Checkpoint
-        if val_metrics['acc'] > best_acc:
-            best_acc = val_metrics['acc']
-            ckpt_name = f"checkpoints/best_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pt"
-            save_checkpoint({
-                "epoch": epoch+1,
-                "model_state": model.state_dict(),
-                "optimizer_state": optimizer.state_dict(),
-                "val_acc": best_acc,
-                "config": cfg,
-            }, ckpt_name)
+    callbacks = build_callbacks(trainer_cfg)
+    logger = False
+    if bool(wandb_cfg.get("enabled", False)):
+        run_name = str(wandb_cfg.get("run_name", f"{model_cfg.get('name','model')}-run"))
+        logger = WandbLogger(
+            project=str(wandb_cfg.get("project", "imagenet-training")),
+            name=run_name,
+            entity=wandb_cfg.get("entity") or None,
+            mode=str(wandb_cfg.get("mode", "online")),
+            save_dir=str(ckpt_dir),
+            tags=wandb_cfg.get("tags", []),
+        )
+
+    trainer = pl.Trainer(
+        max_epochs=int(trainer_cfg.get("max_epochs", 90)),
+        devices=int(trainer_cfg.get("devices", 1)),
+        precision=precision,
+        accumulate_grad_batches=int(trainer_cfg.get("accumulate_grad_batches", 1)),
+        log_every_n_steps=int(trainer_cfg.get("log_every_n_steps", 50)),
+        default_root_dir=str(ckpt_dir),
+        callbacks=callbacks,
+        logger=logger,
+    )
+
+    trainer.fit(model, datamodule=dm)
+
+    trainer.validate(model, datamodule=dm)
+
 
 if __name__ == "__main__":
     main()
