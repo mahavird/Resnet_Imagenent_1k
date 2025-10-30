@@ -62,7 +62,6 @@ Thumbs.db
 checkpoints/
 logs/
 runs/
-data/
 *.log
 *.out
 
