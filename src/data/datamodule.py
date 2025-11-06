@@ -12,24 +12,27 @@ import pytorch_lightning as pl
 def build_transforms(image_size: int, policy: str = "randaugment", rand_num_ops: int = 2, rand_magnitude: int = 9):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
-    train_aug = []
-    train_aug.append(transforms.Resize(int(image_size * 1.14), antialias=True))
-    train_aug.append(transforms.CenterCrop(image_size))
+    # Training: RandomResizedCrop + HorizontalFlip are standard for ImageNet
+    train_aug = [
+        transforms.RandomResizedCrop(image_size),
+        transforms.RandomHorizontalFlip(),
+    ]
     if policy == "randaugment":
         try:
             from torchvision.transforms import RandAugment
-            train_aug = [transforms.Resize(int(image_size * 1.14), antialias=True), transforms.CenterCrop(image_size), RandAugment(num_ops=rand_num_ops, magnitude=rand_magnitude)]
+            train_aug.append(RandAugment(num_ops=rand_num_ops, magnitude=rand_magnitude))
         except Exception:
             pass
     elif policy == "autoaugment":
         try:
             from torchvision.transforms import AutoAugment, AutoAugmentPolicy
-            train_aug = [transforms.Resize(int(image_size * 1.14), antialias=True), transforms.CenterCrop(image_size), AutoAugment(AutoAugmentPolicy.IMAGENET)]
+            train_aug.append(AutoAugment(AutoAugmentPolicy.IMAGENET))
         except Exception:
             pass
     train_aug.extend([transforms.ToTensor(), normalize])
 
     train_tf = transforms.Compose(train_aug)
+    # Eval: Resize+CenterCrop per standard
     eval_tf = transforms.Compose([
         transforms.Resize(int(image_size * 1.14), antialias=True),
         transforms.CenterCrop(image_size),

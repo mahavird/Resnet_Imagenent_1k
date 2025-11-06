@@ -13,28 +13,28 @@ randaugment_num_ops = 2
 randaugment_magnitude = 9
 
 [model]
-name = "mobilenet_v3_large" # e.g., resnet50, vit_base_patch16_224, convnext_base
+name = "resnet50" # e.g., resnet50, vit_base_patch16_224, convnext_base
 pretrained = false
 num_classes = 1000
 
 [optim]
-name = "adamw"
-lr = 0.001
-weight_decay = 0.05
+name = "sgd"
+lr = 0.1 # scale linearly: 0.1 * (batch_size / 256)
+weight_decay = 0.0001
 
 [scheduler]
 name = "cosine" # options: none, cosine
-max_epochs = 90
+max_epochs = 120
 warmup_epochs = 5
 
 [trainer]
-max_epochs = 90
+max_epochs = 120
 precision = "bf16" # options: 32, 16, bf16
 devices = 1
 accumulate_grad_batches = 1
 seed = 0
-output_dir = "outputs/train"
-checkpoint_dir = "outputs/checkpoints"
+output_dir = "/mnt/imagenet/outputs/train"
+checkpoint_dir = "/mnt/imagenet/outputs/checkpoints"
 log_every_n_steps = 50
 
 [wandb]
